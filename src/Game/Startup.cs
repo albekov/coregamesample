@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
+using Game.Services;
+using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -12,26 +11,40 @@ namespace Game
 {
     public class Startup
     {
-        // This method gets called by the runtime. Use this method to add services to the container.
-        // For more information on how to configure your application, visit http://go.microsoft.com/fwlink/?LinkID=398940
+        [UsedImplicitly]
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddSingleton<ConnectionHandler>();
+            services.AddSingleton<PlayersHandler>();
+            services.AddSingleton<MainGame>();
+
+            services.AddSignalR(options => options.Hubs.EnableDetailedErrors = true);
         }
 
-        // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, ILoggerFactory loggerFactory)
+        [UsedImplicitly]
+        public void Configure(
+            IApplicationBuilder app,
+            IHostingEnvironment env,
+            ILoggerFactory loggerFactory,
+            IApplicationLifetime lifetime,
+            IConnectionManager hubManager,
+            ConnectionHandler connectionHandler,
+            MainGame game)
         {
-            loggerFactory.AddConsole();
+            loggerFactory.AddConsole(LogLevel.Trace);
+            loggerFactory.AddDebug();
 
             if (env.IsDevelopment())
-            {
                 app.UseDeveloperExceptionPage();
-            }
 
-            app.Run(async (context) =>
-            {
-                await context.Response.WriteAsync("Hello World!");
-            });
+            app.UseFileServer(new FileServerOptions());
+
+            app.UseWebSockets();
+            app.UseSignalR();
+
+            var stop = lifetime.ApplicationStopping;
+
+            Task.Factory.StartNew(() => game.Start(stop), TaskCreationOptions.LongRunning);
         }
     }
 }

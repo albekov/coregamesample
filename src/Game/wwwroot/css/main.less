@@ -1,0 +1,62 @@
+﻿* {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+    background-color: white;
+    color: #333;
+}
+
+#wrapper{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &>div {
+        display: none;
+        margin: 0;
+    }
+}
+
+#wrapper>#loading-container {
+    display: block;
+}
+
+#status {
+    position: fixed;
+    bottom: 0;
+    right: 0;
+    padding: 5px 15px;
+    background-color: rgba(182, 255, 0, 0.2);
+    color: #333;
+}
+
+// Loading
+#loading-container {
+    font-size: 24pt;
+    margin: 20px;
+    padding: 50px;
+}
+
+// Login
+#login-container > form {
+    margin: 20px;
+    padding: 50px;
+    background-color: #fff;
+
+    input {
+        display: block;
+        padding: 5px 15px;
+        margin-top: 10px;
+    }
+
+    input[type=text], input[type=password] {
+        text-align: center;
+    }
+
+    input[type=button] {
+        width: 100%;
+    }
+}
