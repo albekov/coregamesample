@@ -1,7 +1,7 @@
 using System;
 using JetBrains.Annotations;
 
-namespace Game.Services
+namespace Game.Model
 {
     [UsedImplicitly]
     public class ConnectionChangedEventArgs : EventArgs

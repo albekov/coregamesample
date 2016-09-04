@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Game.Model;
 using JetBrains.Annotations;
 
 namespace Game.Services
@@ -58,7 +59,7 @@ namespace Game.Services
                 authId = "fake";
 #endif
             GameSession session;
-            if (authId == null || !_sessions.TryGetValue(authId, out session))
+            if ((authId == null) || !_sessions.TryGetValue(authId, out session))
                 return null;
 
             _connections[connectionId] = session.Id;

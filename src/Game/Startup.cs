@@ -14,9 +14,7 @@ namespace Game
         [UsedImplicitly]
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddSingleton<ConnectionHandler>();
-            services.AddSingleton<PlayersHandler>();
-            services.AddSingleton<MainGame>();
+            RegisterGameServices(services);
 
             services.AddSignalR(options => options.Hubs.EnableDetailedErrors = true);
         }
@@ -45,6 +43,15 @@ namespace Game
             var stop = lifetime.ApplicationStopping;
 
             Task.Factory.StartNew(() => game.StartGame(stop), TaskCreationOptions.LongRunning);
+        }
+
+        private static void RegisterGameServices(IServiceCollection services)
+        {
+            services.AddSingleton<PlayerManager>();
+            services.AddSingleton<World>();
+            services.AddSingleton<ConnectionHandler>();
+            services.AddSingleton<PlayersHandler>();
+            services.AddSingleton<MainGame>();
         }
     }
 }

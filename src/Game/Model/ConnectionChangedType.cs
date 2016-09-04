@@ -1,4 +1,4 @@
-namespace Game.Services
+namespace Game.Model
 {
     public enum ConnectionChangedType
     {

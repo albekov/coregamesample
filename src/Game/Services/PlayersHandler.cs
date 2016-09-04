@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Game.Model;
 using JetBrains.Annotations;
 
 namespace Game.Services
@@ -11,17 +12,24 @@ namespace Game.Services
     public class PlayersHandler : IDisposable
     {
         private readonly ConnectionHandler _connectionHandler;
+        private readonly PlayerManager _playerManager;
 
         private readonly ConcurrentDictionary<string, string> _playersByConnections =
             new ConcurrentDictionary<string, string>();
 
         private Func<string, dynamic> _getChannel;
 
-        public PlayersHandler(ConnectionHandler connectionHandler)
+        public PlayersHandler(ConnectionHandler connectionHandler, PlayerManager playerManager)
         {
             _connectionHandler = connectionHandler;
+            _playerManager = playerManager;
 
             _connectionHandler.ConnectionChanged += ConnectionHandlerOnConnectionChanged;
+        }
+
+        public void Dispose()
+        {
+            _connectionHandler.ConnectionChanged -= ConnectionHandlerOnConnectionChanged;
         }
 
         public event EventHandler<PlayerChangedEventArgs> PlayerChanged;
@@ -48,15 +56,8 @@ namespace Game.Services
         private async Task<Player> GetPlayer(string connectionId)
         {
             var user = await _connectionHandler.GetUser(connectionId);
-
-            if (user.CurrentPlayer == null)
-                user.CurrentPlayer = new Player
-                {
-                    Id = Guid.NewGuid().ToString(),
-                    Name = user.Username
-                };
-
-            return user.CurrentPlayer;
+            var player = _playerManager.LoadPlayer(user);
+            return player;
         }
 
         public ICollection<string> GetConnectedPlayers()
@@ -99,11 +100,6 @@ namespace Game.Services
         private void OnPlayerChanged(PlayerChangeType type, string connectionId, string playerId)
         {
             PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, connectionId, playerId));
-        }
-
-        public void Dispose()
-        {
-            _connectionHandler.ConnectionChanged -= ConnectionHandlerOnConnectionChanged;
         }
     }
 }

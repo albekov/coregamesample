@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Game.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.SignalR;

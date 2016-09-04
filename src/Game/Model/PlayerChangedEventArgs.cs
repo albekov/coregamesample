@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace Game.Services
+namespace Game.Model
 {
     public class PlayerChangedEventArgs : EventArgs
     {
