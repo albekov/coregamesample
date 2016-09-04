@@ -28,7 +28,9 @@ interface IConnection {
     onLogging();
     login(username, password);
     logout();
-    game(): any;
+
+    onUpdate(data: any);
+    startGame();
 }
 
 class Connection implements IConnection {
@@ -37,6 +39,7 @@ class Connection implements IConnection {
     onLoggedIn: () => void;
     onLoggedOut: () => void;
     onLogging: () => void;
+    onUpdate: (data: any) => void;
 
     constructor() {
         this.authHub = $.connection.authHub;
@@ -47,9 +50,17 @@ class Connection implements IConnection {
             console.log(`>> message: ${data}`);
         };
 
+        this.gameHub.client.update = data => {
+            this.onUpdate(data);
+        };
+
         this.authHub.client.status = data => {
             $('#status').text(data);
         };
+    }
+
+    startGame() {
+        this.gameHub.server.start();
     }
 
     connect() {
@@ -85,12 +96,8 @@ class Connection implements IConnection {
     logout() {
         this.authHub.server.logout()
             .then(() => {
-                localStorage['authId'] = null;
+                delete localStorage['authId'];
                 this.init();
             });
-    }
-
-    game() {
-        return this.gameHub.server;
     }
 }

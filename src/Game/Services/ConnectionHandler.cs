@@ -58,7 +58,7 @@ namespace Game.Services
                 authId = "fake";
 #endif
             GameSession session;
-            if (!_sessions.TryGetValue(authId, out session))
+            if (authId == null || !_sessions.TryGetValue(authId, out session))
                 return null;
 
             _connections[connectionId] = session.Id;
@@ -81,6 +81,7 @@ namespace Game.Services
 
             _connections[connectionId] = session.Id;
 
+            OnConnectionChanged(ConnectionChangedType.Login, connectionId);
             OnStatusChanged();
 
             return await Task.FromResult(session.Id);
@@ -130,6 +131,7 @@ namespace Game.Services
                 _sessions.TryRemove(sessionId, out session);
 
                 OnStatusChanged();
+                OnConnectionChanged(ConnectionChangedType.Logout, connectionId);
             }
             await Task.FromResult((object) null);
         }

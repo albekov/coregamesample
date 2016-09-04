@@ -8,7 +8,7 @@ using JetBrains.Annotations;
 namespace Game.Services
 {
     [UsedImplicitly]
-    public class PlayersHandler
+    public class PlayersHandler : IDisposable
     {
         private readonly ConnectionHandler _connectionHandler;
 
@@ -21,7 +21,7 @@ namespace Game.Services
         {
             _connectionHandler = connectionHandler;
 
-            connectionHandler.ConnectionChanged += ConnectionHandlerOnConnectionChanged;
+            _connectionHandler.ConnectionChanged += ConnectionHandlerOnConnectionChanged;
         }
 
         public event EventHandler<PlayerChangedEventArgs> PlayerChanged;
@@ -33,6 +33,11 @@ namespace Game.Services
                 case ConnectionChangedType.Opened:
                     break;
                 case ConnectionChangedType.Closed:
+                    DisconnectPlayer(args.ConnectionId);
+                    break;
+                case ConnectionChangedType.Login:
+                    break;
+                case ConnectionChangedType.Logout:
                     DisconnectPlayer(args.ConnectionId);
                     break;
                 default:
@@ -90,6 +95,11 @@ namespace Game.Services
         private void OnPlayerChanged(PlayerChangeType type, Player player)
         {
             PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, player));
+        }
+
+        public void Dispose()
+        {
+            _connectionHandler.ConnectionChanged -= ConnectionHandlerOnConnectionChanged;
         }
     }
 }

@@ -3,6 +3,8 @@ namespace Game.Services
     public enum ConnectionChangedType
     {
         Opened,
-        Closed
+        Closed,
+        Login,
+        Logout
     }
 }

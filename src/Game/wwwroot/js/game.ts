@@ -7,10 +7,65 @@ class StartState extends Phaser.State {
 
     init() {
         console.log('StartState.init');
+        $('#play').on('click', () => this.game.state.start(GameState.main));
     }
 
     preload() {
         console.log('StartState.preload');
+    }
+
+    private entities: any = {};
+
+    update() {
+        if (Game.data) {
+            const data = Game.data;
+            Game.data = null;
+
+            if (data.entities && data.entities.updated) {
+                const entities = data.entities.updated;
+
+                for (const re of entities) {
+                    if (!this.hasEntity(re.id))
+                        this.addEntity(re);
+
+                    this.updateEntity(re);
+                }
+            }
+
+        }
+    }
+
+    render() {
+        this.game.debug.inputInfo(32, 32);
+    }
+
+    getEntityById(id: string): IGameEntity {
+        return this.entities[id];
+    }
+
+    addEntity(re: IGameEntity) {
+        const g = this.add.graphics(re.x, re.y);
+        g.lineStyle(2, 0x00FF00);
+        g.drawRect(-5, -5, 10, 10);
+        this.physics.enable(g, Phaser.Physics.ARCADE);
+        g.body.velocity.x = re.dx;
+        g.body.velocity.y = re.dy;
+
+        re.obj = g;
+        this.entities[re.id] = re;
+    }
+
+    updateEntity(re: IGameEntity) {
+        const e = this.getEntityById(re.id);
+        const g = e.obj;
+        g.x = re.x;
+        g.y = re.y;
+        g.body.velocity.x = re.dx;
+        g.body.velocity.y = re.dy;
+    }
+
+    hasEntity(id: string) {
+        return id in this.entities;
     }
 }
 
@@ -33,15 +88,36 @@ class GameState {
     static main = 'main';
 }
 
+interface IGameUpdate {
+    entities: IEntitiesUpdate;
+}
+
+interface IEntitiesUpdate {
+    updated: IGameEntity[];
+}
+
+interface IGameEntity {
+    id: string;
+    name: string;
+    x: number;
+    y: number;
+    dx: number;
+    dy: number;
+    obj: Phaser.Graphics;
+}
+
 class Game {
     private connection: IConnection;
     private game: Phaser.Game;
+    public static data: IGameUpdate;
 
     constructor(connection: IConnection) {
         this.connection = connection;
         this.connection.onLoggedIn = () => this.loggedIn();
         this.connection.onLoggedOut = () => this.loggedOut();
         this.connection.onLogging = () => this.logging();
+
+        this.connection.onUpdate = data => this.gameUpdate(data);
 
         this.initLoginEvents();
     }
@@ -53,7 +129,8 @@ class Game {
             'game',
             {
                 preload: () => this.preload(),
-                create: () => this.create()
+                create: () => this.create(),
+                render: () => this.render()
             });
     }
 
@@ -70,15 +147,25 @@ class Game {
         this.game.state.start(GameState.start);
     }
 
+    gameUpdate(data: IGameUpdate) {
+        Game.data = data;
+    }
+
     preload() {
     }
 
     create() {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        this.game.world.setBounds(-1000, -1000, 2000, 2000);
+        //this.game.world.setBounds(-1000, -1000, 2000, 2000);
+        this.game.add.plugin(Phaser.Plugin.Debug);
+        this.game.stage.disableVisibilityChange = true;
         this.initStates();
 
-        this.connection.game().start();
+        this.connection.startGame();
+    }
+
+    render() {
+        this.game.debug.inputInfo(32, 32);
     }
 
     //#region Login/Logout

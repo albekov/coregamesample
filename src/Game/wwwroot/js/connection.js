@@ -1,16 +1,23 @@
 /// <reference path="../../typings/_references.ts" />
 var Connection = (function () {
     function Connection() {
+        var _this = this;
         this.authHub = $.connection.authHub;
         this.gameHub = $.connection.gameHub;
         $.connection.hub.logging = true;
         this.authHub.client.message = function (data) {
             console.log(">> message: " + data);
         };
+        this.gameHub.client.update = function (data) {
+            _this.onUpdate(data);
+        };
         this.authHub.client.status = function (data) {
             $('#status').text(data);
         };
     }
+    Connection.prototype.startGame = function () {
+        this.gameHub.server.start();
+    };
     Connection.prototype.connect = function () {
         var _this = this;
         $.connection.hub.start()
@@ -45,12 +52,9 @@ var Connection = (function () {
         var _this = this;
         this.authHub.server.logout()
             .then(function () {
-            localStorage['authId'] = null;
+            delete localStorage['authId'];
             _this.init();
         });
-    };
-    Connection.prototype.game = function () {
-        return this.gameHub.server;
     };
     return Connection;
 }());
