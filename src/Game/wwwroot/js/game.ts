@@ -22,7 +22,17 @@ class StartState extends Phaser.State {
             });
         startText.anchor.set(0.5);
         startText.inputEnabled = true;
-        startText.events.onInputUp.add(this.onStart, this);
+        startText.events.onInputUp.add(this.start, this);
+
+        const logoutText = this.game.add.text(
+            10, 5,
+            'LOGOUT',
+            {
+                font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+                fill: '#FFFFFF'
+            });
+        logoutText.inputEnabled = true;
+        logoutText.events.onInputUp.add(this.logout, this);
     }
 
     init(connection: IConnection) {
@@ -34,9 +44,12 @@ class StartState extends Phaser.State {
         console.log('StartState.preload');
     }
 
-    onStart() {
-        console.log('onStart');
+    start() {
         this.connection.startGame();
+    }
+
+    logout() {
+        this.connection.logout();
     }
 }
 
@@ -54,7 +67,7 @@ class MainState extends Phaser.State {
             10, 5,
             'EXIT',
             {
-                font: "16px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+                font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
                 fill: '#FFFFFF'
             });
         //stopText.anchor.set(0.5);
@@ -95,8 +108,8 @@ class MainState extends Phaser.State {
     }
 
     render() {
-        this.game.debug.inputInfo(32, 32);
-        this.game.debug.cameraInfo(this.game.camera, 300, 32);
+        this.game.debug.inputInfo(32, 40);
+        this.game.debug.cameraInfo(this.game.camera, 300, 40);
     }
 
     onExit() {

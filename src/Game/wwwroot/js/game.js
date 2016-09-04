@@ -20,7 +20,13 @@ var StartState = (function (_super) {
         });
         startText.anchor.set(0.5);
         startText.inputEnabled = true;
-        startText.events.onInputUp.add(this.onStart, this);
+        startText.events.onInputUp.add(this.start, this);
+        var logoutText = this.game.add.text(10, 5, 'LOGOUT', {
+            font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+            fill: '#FFFFFF'
+        });
+        logoutText.inputEnabled = true;
+        logoutText.events.onInputUp.add(this.logout, this);
     };
     StartState.prototype.init = function (connection) {
         console.log('StartState.init');
@@ -29,9 +35,11 @@ var StartState = (function (_super) {
     StartState.prototype.preload = function () {
         console.log('StartState.preload');
     };
-    StartState.prototype.onStart = function () {
-        console.log('onStart');
+    StartState.prototype.start = function () {
         this.connection.startGame();
+    };
+    StartState.prototype.logout = function () {
+        this.connection.logout();
     };
     return StartState;
 }(Phaser.State));
@@ -45,7 +53,7 @@ var MainState = (function (_super) {
     MainState.prototype.create = function () {
         console.log('MainState.create');
         var stopText = this.game.add.text(10, 5, 'EXIT', {
-            font: "16px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+            font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
             fill: '#FFFFFF'
         });
         //stopText.anchor.set(0.5);
@@ -78,8 +86,8 @@ var MainState = (function (_super) {
         }
     };
     MainState.prototype.render = function () {
-        this.game.debug.inputInfo(32, 32);
-        this.game.debug.cameraInfo(this.game.camera, 300, 32);
+        this.game.debug.inputInfo(32, 40);
+        this.game.debug.cameraInfo(this.game.camera, 300, 40);
     };
     MainState.prototype.onExit = function () {
         this.connection.stopGame();
