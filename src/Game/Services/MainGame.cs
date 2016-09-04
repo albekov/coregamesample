@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
@@ -21,6 +23,11 @@ namespace Game.Services
 
         private readonly PlayersHandler _playersHandler;
 
+        private readonly ConcurrentDictionary<string, double> _updates =
+            new ConcurrentDictionary<string, double>();
+
+        private readonly World _world;
+
         public MainGame(PlayersHandler playersHandler,
             ILogger<MainGame> logger)
         {
@@ -28,6 +35,9 @@ namespace Game.Services
             _logger = logger;
 
             InitEntities();
+
+            _world = new World();
+            _world.Init();
 
             _playersHandler.PlayerChanged += PlayersHandlerOnPlayerChanged;
         }
@@ -43,7 +53,7 @@ namespace Game.Services
                 _entities.Add(new GameEntity
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Type = "test",
+                    Type = "food",
                     Name = $"Entity {i}",
                     X = GetRandom(100, 500),
                     Y = GetRandom(100, 300),
@@ -55,18 +65,24 @@ namespace Game.Services
 
         private void PlayersHandlerOnPlayerChanged(object sender, PlayerChangedEventArgs args)
         {
+            _logger.LogInformation($"PlayerChanged {args.Type} {args.PlayerId}");
             switch (args.Type)
             {
                 case PlayerChangeType.Connected:
+                    _world.ConnectPlayer(args.PlayerId);
+                    var worldInfo = _world.Info;
+                    _playersHandler.GetChannel(args.ConnectionId).start(worldInfo);
                     break;
                 case PlayerChangeType.Disconnected:
+                    _playersHandler.GetChannel(args.ConnectionId).stop();
+                    _world.DisconnectPlayer(args.PlayerId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
             }
         }
 
-        public void Start(CancellationToken stop)
+        public void StartGame(CancellationToken stop)
         {
             Init(stop);
             GameLoop(stop);
@@ -102,13 +118,13 @@ namespace Game.Services
                 if ((entity.X < 6) || (entity.X > 594))
                 {
                     entity.DX = -entity.DX;
-                    entity.X += entity.DX * dt;
+                    entity.X += entity.DX*dt;
                     entity.Updated = time;
                 }
                 if ((entity.Y < 6) || (entity.Y > 394))
                 {
                     entity.DY = -entity.DY;
-                    entity.Y += entity.DY * dt;
+                    entity.Y += entity.DY*dt;
                     entity.Updated = time;
                 }
 
@@ -121,29 +137,36 @@ namespace Game.Services
             }
         }
 
-        private static float GetRandom(double @from, double to, int decimals = 0)
+        private static float GetRandom(double from, double to, int decimals = 0)
         {
-            return (float) Math.Round(R.NextDouble()*(to - @from) + @from, decimals);
+            return (float) Math.Round(R.NextDouble()*(to - from) + from, decimals);
         }
 
         private void SendUpdates(double prevTime, double time)
         {
-            var players = _playersHandler.GetConnectedPlayers();
-            foreach (var player in players)
+            var playerIds = _playersHandler.GetConnectedPlayers();
+            foreach (var playerId in playerIds)
             {
-                var update = GetGameUpdate(player);
-                if (update != null)
+                var connectionsIds = _playersHandler.GetPlayerConnections(playerId);
+                foreach (var connectionId in connectionsIds)
                 {
-                    var channel = _playersHandler.GetPlayerChannel(player.Id);
-                    channel.Update(update);
-                    player.LastSend = time;
+                    var update = GetGameUpdate(playerId, connectionId);
+                    if (update != null)
+                    {
+                        var channel = _playersHandler.GetChannel(connectionId);
+                        channel.Update(update);
+                        SaveGameUpdate(playerId, connectionId, time);
+                    }
                 }
             }
         }
 
-        private GameUpdate GetGameUpdate(Player player)
+        private GameUpdate GetGameUpdate(string playerId, string connectionId)
         {
-            var updated = _entities.Where(e => e.Updated >= player.LastSend).ToList();
+            double updateTime = 0;
+            _updates.TryGetValue(connectionId, out updateTime);
+
+            var updated = _entities.Where(e => e.Updated >= updateTime).ToList();
             if (!updated.Any())
                 return null;
 
@@ -157,6 +180,11 @@ namespace Game.Services
             return update;
         }
 
+        private void SaveGameUpdate(string playerId, string connectionId, double time)
+        {
+            _updates[connectionId] = time;
+        }
+
         private static void SleepUntil(Stopwatch timer, double time)
         {
             SpinWait.SpinUntil(() => timer.ElapsedMilliseconds >= time);
@@ -168,6 +196,16 @@ namespace Game.Services
 
         private void Finish(CancellationToken stop)
         {
+        }
+
+        public async Task Start(string connectionId)
+        {
+            await _playersHandler.ConnectPlayer(connectionId);
+        }
+
+        public async Task Stop(string connectionId)
+        {
+            await _playersHandler.DisconnectPlayer(connectionId);
         }
     }
 

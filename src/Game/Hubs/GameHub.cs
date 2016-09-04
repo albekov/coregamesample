@@ -15,8 +15,7 @@ namespace Game.Hubs
 
         public GameHub(
             ILogger<GameHub> log,
-            PlayersHandler playersHandler,
-            ConnectionHandler connectionHandler)
+            PlayersHandler playersHandler)
         {
             _log = log;
             _playersHandler = playersHandler;
@@ -24,16 +23,19 @@ namespace Game.Hubs
             _playersHandler.SetChannel(GetChannel);
         }
 
-        private dynamic GetChannel(IList<string> connectionIds)
+        private dynamic GetChannel(string connectionId)
         {
-            return Clients.Clients(connectionIds);
+            return Clients.Client(connectionId);
         }
 
         public async Task Start()
         {
-            var player = await _playersHandler.CreatePlayer(Context.ConnectionId);
+            await _playersHandler.ConnectPlayer(Context.ConnectionId);
+        }
 
-            _log.LogTrace($"Player entered: {player.Name}");
+        public async Task Stop()
+        {
+            await _playersHandler.DisconnectPlayer(Context.ConnectionId);
         }
     }
 }

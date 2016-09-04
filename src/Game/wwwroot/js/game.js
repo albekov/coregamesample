@@ -7,21 +7,62 @@ var __extends = (this && this.__extends) || function (d, b) {
 var StartState = (function (_super) {
     __extends(StartState, _super);
     function StartState() {
-        _super.apply(this, arguments);
-        this.entities = {};
+        _super.call(this);
+        console.log('StartState.ctor()');
     }
     StartState.prototype.create = function () {
         console.log('StartState.create');
+        this.game.world.setBounds(0, 0, this.game.width, this.game.height);
+        var startText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, 'START', {
+            font: "65px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+            fill: '#4400FF',
+            align: 'center'
+        });
+        startText.anchor.set(0.5);
+        startText.inputEnabled = true;
+        startText.events.onInputUp.add(this.onStart, this);
     };
-    StartState.prototype.init = function () {
-        var _this = this;
+    StartState.prototype.init = function (connection) {
         console.log('StartState.init');
-        $('#play').on('click', function () { return _this.game.state.start(GameState.main); });
+        this.connection = connection;
     };
     StartState.prototype.preload = function () {
         console.log('StartState.preload');
     };
-    StartState.prototype.update = function () {
+    StartState.prototype.onStart = function () {
+        console.log('onStart');
+        this.connection.startGame();
+    };
+    return StartState;
+}(Phaser.State));
+var MainState = (function (_super) {
+    __extends(MainState, _super);
+    function MainState() {
+        _super.call(this);
+        this.follow = false;
+        console.log('MainState.ctor()');
+    }
+    MainState.prototype.create = function () {
+        console.log('MainState.create');
+        var stopText = this.game.add.text(10, 5, 'EXIT', {
+            font: "16px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+            fill: '#FFFFFF'
+        });
+        //stopText.anchor.set(0.5);
+        stopText.inputEnabled = true;
+        stopText.events.onInputUp.add(this.onExit, this);
+        stopText.fixedToCamera = true;
+    };
+    MainState.prototype.init = function (connection, data) {
+        console.log('MainState.init');
+        this.connection = connection;
+        this.entities = [];
+        this.world.setBounds(data.x0, data.y0, data.width, data.height);
+    };
+    MainState.prototype.preload = function () {
+        console.log('MainState.preload');
+    };
+    MainState.prototype.update = function () {
         if (Game.data) {
             var data = Game.data;
             Game.data = null;
@@ -36,23 +77,32 @@ var StartState = (function (_super) {
             }
         }
     };
-    StartState.prototype.render = function () {
+    MainState.prototype.render = function () {
         this.game.debug.inputInfo(32, 32);
+        this.game.debug.cameraInfo(this.game.camera, 300, 32);
     };
-    StartState.prototype.getEntityById = function (id) {
+    MainState.prototype.onExit = function () {
+        this.connection.stopGame();
+    };
+    MainState.prototype.getEntityById = function (id) {
         return this.entities[id];
     };
-    StartState.prototype.addEntity = function (re) {
-        var g = this.add.graphics(re.x, re.y);
-        g.lineStyle(2, 0x00FF00);
-        g.drawRect(-5, -5, 10, 10);
+    MainState.prototype.addEntity = function (re) {
+        //if (!this.follow) {
+        //    this.follow = true;
+        //    this.game.world.setBounds(-500, -500, 1000, 1000);
+        //    //this.camera.setPosition(-200, -200);
+        //    this.camera.follow(g, Phaser.Camera.FOLLOW_LOCKON);
+        //    g.lineStyle(4, 0x0000FF);
+        //}
+        var g = this.createEntity(re);
         this.physics.enable(g, Phaser.Physics.ARCADE);
         g.body.velocity.x = re.dx;
         g.body.velocity.y = re.dy;
         re.obj = g;
         this.entities[re.id] = re;
     };
-    StartState.prototype.updateEntity = function (re) {
+    MainState.prototype.updateEntity = function (re) {
         var e = this.getEntityById(re.id);
         var g = e.obj;
         g.x = re.x;
@@ -60,24 +110,21 @@ var StartState = (function (_super) {
         g.body.velocity.x = re.dx;
         g.body.velocity.y = re.dy;
     };
-    StartState.prototype.hasEntity = function (id) {
+    MainState.prototype.hasEntity = function (id) {
         return id in this.entities;
     };
-    return StartState;
-}(Phaser.State));
-var MainState = (function (_super) {
-    __extends(MainState, _super);
-    function MainState() {
-        _super.apply(this, arguments);
-    }
-    MainState.prototype.create = function () {
-        console.log('MainState.create');
-    };
-    MainState.prototype.init = function () {
-        console.log('MainState.init');
-    };
-    MainState.prototype.preload = function () {
-        console.log('MainState.preload');
+    MainState.prototype.createEntity = function (re) {
+        var g = this.add.graphics(re.x, re.y);
+        switch (re.type) {
+            case 'player':
+                g.lineStyle(4, 0xFF0000);
+                g.drawRect(-7, -7, 14, 14);
+                break;
+            case 'food':
+                g.lineStyle(2, 0x00FF00);
+                g.drawRect(-5, -5, 10, 10);
+        }
+        return g;
     };
     return MainState;
 }(Phaser.State));
@@ -99,6 +146,8 @@ var Game = (function () {
         this.connection.onLoggedIn = function () { return _this.loggedIn(); };
         this.connection.onLoggedOut = function () { return _this.loggedOut(); };
         this.connection.onLogging = function () { return _this.logging(); };
+        this.connection.onStart = function (data) { return _this.started(data); };
+        this.connection.onStop = function () { return _this.stopped(); };
         this.connection.onUpdate = function (data) { return _this.gameUpdate(data); };
         this.initLoginEvents();
     }
@@ -119,7 +168,13 @@ var Game = (function () {
     Game.prototype.initStates = function () {
         this.game.state.add(GameState.start, new StartState());
         this.game.state.add(GameState.main, new MainState());
-        this.game.state.start(GameState.start);
+        this.game.state.start(GameState.start, true, false, this.connection);
+    };
+    Game.prototype.started = function (data) {
+        this.game.state.start(GameState.main, true, false, this.connection, data);
+    };
+    Game.prototype.stopped = function () {
+        this.game.state.start(GameState.start, true, false, this.connection);
     };
     Game.prototype.gameUpdate = function (data) {
         Game.data = data;
@@ -128,11 +183,9 @@ var Game = (function () {
     };
     Game.prototype.create = function () {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        //this.game.world.setBounds(-1000, -1000, 2000, 2000);
-        this.game.add.plugin(Phaser.Plugin.Debug);
+        //this.game.add.plugin(Phaser.Plugin.Debug);
         this.game.stage.disableVisibilityChange = true;
         this.initStates();
-        this.connection.startGame();
     };
     Game.prototype.render = function () {
         this.game.debug.inputInfo(32, 32);

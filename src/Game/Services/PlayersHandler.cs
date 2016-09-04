@@ -12,10 +12,10 @@ namespace Game.Services
     {
         private readonly ConnectionHandler _connectionHandler;
 
-        private readonly ConcurrentDictionary<string, Player> _players =
-            new ConcurrentDictionary<string, Player>();
+        private readonly ConcurrentDictionary<string, string> _playersByConnections =
+            new ConcurrentDictionary<string, string>();
 
-        private Func<IList<string>, dynamic> _getChannel;
+        private Func<string, dynamic> _getChannel;
 
         public PlayersHandler(ConnectionHandler connectionHandler)
         {
@@ -45,7 +45,7 @@ namespace Game.Services
             }
         }
 
-        public async Task<Player> CreatePlayer(string connectionId)
+        private async Task<Player> GetPlayer(string connectionId)
         {
             var user = await _connectionHandler.GetUser(connectionId);
 
@@ -56,45 +56,49 @@ namespace Game.Services
                     Name = user.Username
                 };
 
-            ConnectPlayer(connectionId, user.CurrentPlayer);
-
             return user.CurrentPlayer;
         }
 
-        public ICollection<Player> GetConnectedPlayers()
+        public ICollection<string> GetConnectedPlayers()
         {
-            return _players.Values;
+            return _playersByConnections.Values;
         }
 
-        private void ConnectPlayer(string connectionId, Player player)
+        public async Task ConnectPlayer(string connectionId)
         {
-            _players[connectionId] = player;
-            OnPlayerChanged(PlayerChangeType.Connected, player);
+            var player = await GetPlayer(connectionId);
+
+            _playersByConnections[connectionId] = player.Id;
+            OnPlayerChanged(PlayerChangeType.Connected, connectionId, player.Id);
         }
 
-        private Player DisconnectPlayer(string connectionId)
+        public async Task<string> DisconnectPlayer(string connectionId)
         {
-            Player player;
-            _players.TryRemove(connectionId, out player);
-            OnPlayerChanged(PlayerChangeType.Disconnected, player);
-            return player;
+            string playerId;
+            _playersByConnections.TryRemove(connectionId, out playerId);
+            OnPlayerChanged(PlayerChangeType.Disconnected, connectionId, playerId);
+            return await Task.FromResult(playerId);
         }
 
-        public dynamic GetPlayerChannel(string playerId)
+        public List<string> GetPlayerConnections(string playerId)
         {
-            var connectionIds = _players.Where(g => g.Value.Id == playerId).Select(g => g.Key).ToList();
-            var channel = _getChannel(connectionIds);
-            return channel;
+            var connectionIds = _playersByConnections.Where(p => p.Value == playerId).Select(p => p.Key).ToList();
+            return connectionIds;
         }
 
-        public void SetChannel(Func<IList<string>, dynamic> getChannel)
+        public dynamic GetChannel(string connectionId)
+        {
+            return _getChannel(connectionId);
+        }
+
+        public void SetChannel(Func<string, dynamic> getChannel)
         {
             _getChannel = getChannel;
         }
 
-        private void OnPlayerChanged(PlayerChangeType type, Player player)
+        private void OnPlayerChanged(PlayerChangeType type, string connectionId, string playerId)
         {
-            PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, player));
+            PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, connectionId, playerId));
         }
 
         public void Dispose()

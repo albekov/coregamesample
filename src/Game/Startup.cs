@@ -44,7 +44,7 @@ namespace Game
 
             var stop = lifetime.ApplicationStopping;
 
-            Task.Factory.StartNew(() => game.Start(stop), TaskCreationOptions.LongRunning);
+            Task.Factory.StartNew(() => game.StartGame(stop), TaskCreationOptions.LongRunning);
         }
     }
 }

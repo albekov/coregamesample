@@ -8,15 +8,18 @@ var Connection = (function () {
         this.authHub.client.message = function (data) {
             console.log(">> message: " + data);
         };
-        this.gameHub.client.update = function (data) {
-            _this.onUpdate(data);
-        };
+        this.gameHub.client.start = function (data) { return _this.onStart(data); };
+        this.gameHub.client.stop = function () { return _this.onStop(); };
+        this.gameHub.client.update = function (data) { return _this.onUpdate(data); };
         this.authHub.client.status = function (data) {
             $('#status').text(data);
         };
     }
     Connection.prototype.startGame = function () {
         this.gameHub.server.start();
+    };
+    Connection.prototype.stopGame = function () {
+        this.gameHub.server.stop();
     };
     Connection.prototype.connect = function () {
         var _this = this;

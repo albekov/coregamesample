@@ -1,20 +1,80 @@
 ﻿/// <reference path="../../typings/_references.ts" />
 
 class StartState extends Phaser.State {
-    create() {
-        console.log('StartState.create');
+    private connection: IConnection;
+
+    constructor() {
+        super();
+        console.log('StartState.ctor()');
     }
 
-    init() {
+    create() {
+        console.log('StartState.create');
+        this.game.world.setBounds(0, 0, this.game.width, this.game.height);
+        const startText = this.game.add.text(
+            this.game.world.centerX,
+            this.game.world.centerY,
+            'START',
+            {
+                font: "65px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+                fill: '#4400FF',
+                align: 'center'
+            });
+        startText.anchor.set(0.5);
+        startText.inputEnabled = true;
+        startText.events.onInputUp.add(this.onStart, this);
+    }
+
+    init(connection: IConnection) {
         console.log('StartState.init');
-        $('#play').on('click', () => this.game.state.start(GameState.main));
+        this.connection = connection;
     }
 
     preload() {
         console.log('StartState.preload');
     }
 
-    private entities: any = {};
+    onStart() {
+        console.log('onStart');
+        this.connection.startGame();
+    }
+}
+
+class MainState extends Phaser.State {
+    private connection: IConnection;
+
+    constructor() {
+        super();
+        console.log('MainState.ctor()');
+    }
+
+    create() {
+        console.log('MainState.create');
+        const stopText = this.game.add.text(
+            10, 5,
+            'EXIT',
+            {
+                font: "16px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+                fill: '#FFFFFF'
+            });
+        //stopText.anchor.set(0.5);
+        stopText.inputEnabled = true;
+        stopText.events.onInputUp.add(this.onExit, this);
+        stopText.fixedToCamera = true;
+    }
+
+    init(connection: IConnection, data: any) {
+        console.log('MainState.init');
+        this.connection = connection;
+        this.entities = [];
+        this.world.setBounds(data.x0, data.y0, data.width, data.height);
+    }
+
+    preload() {
+        console.log('MainState.preload');
+    }
+
+    private entities: any;
 
     update() {
         if (Game.data) {
@@ -31,22 +91,33 @@ class StartState extends Phaser.State {
                     this.updateEntity(re);
                 }
             }
-
         }
     }
 
     render() {
         this.game.debug.inputInfo(32, 32);
+        this.game.debug.cameraInfo(this.game.camera, 300, 32);
+    }
+
+    onExit() {
+        this.connection.stopGame();
     }
 
     getEntityById(id: string): IGameEntity {
         return this.entities[id];
     }
 
+    follow = false;
+
     addEntity(re: IGameEntity) {
-        const g = this.add.graphics(re.x, re.y);
-        g.lineStyle(2, 0x00FF00);
-        g.drawRect(-5, -5, 10, 10);
+        //if (!this.follow) {
+        //    this.follow = true;
+        //    this.game.world.setBounds(-500, -500, 1000, 1000);
+        //    //this.camera.setPosition(-200, -200);
+        //    this.camera.follow(g, Phaser.Camera.FOLLOW_LOCKON);
+        //    g.lineStyle(4, 0x0000FF);
+        //}
+        const g = this.createEntity(re);
         this.physics.enable(g, Phaser.Physics.ARCADE);
         g.body.velocity.x = re.dx;
         g.body.velocity.y = re.dy;
@@ -67,19 +138,19 @@ class StartState extends Phaser.State {
     hasEntity(id: string) {
         return id in this.entities;
     }
-}
 
-class MainState extends Phaser.State {
-    create() {
-        console.log('MainState.create');
-    }
-
-    init() {
-        console.log('MainState.init');
-    }
-
-    preload() {
-        console.log('MainState.preload');
+    createEntity(re) {
+        const g = this.add.graphics(re.x, re.y);
+        switch (re.type) {
+        case 'player':
+            g.lineStyle(4, 0xFF0000);
+            g.drawRect(-7, -7, 14, 14);
+            break;
+        case 'food':
+            g.lineStyle(2, 0x00FF00);
+            g.drawRect(-5, -5, 10, 10);
+        }
+        return g;
     }
 }
 
@@ -98,6 +169,7 @@ interface IEntitiesUpdate {
 
 interface IGameEntity {
     id: string;
+    type: string;
     name: string;
     x: number;
     y: number;
@@ -109,13 +181,16 @@ interface IGameEntity {
 class Game {
     private connection: IConnection;
     private game: Phaser.Game;
-    public static data: IGameUpdate;
+    static data: IGameUpdate;
 
     constructor(connection: IConnection) {
         this.connection = connection;
         this.connection.onLoggedIn = () => this.loggedIn();
         this.connection.onLoggedOut = () => this.loggedOut();
         this.connection.onLogging = () => this.logging();
+
+        this.connection.onStart = (data: any) => this.started(data);
+        this.connection.onStop = () => this.stopped();
 
         this.connection.onUpdate = data => this.gameUpdate(data);
 
@@ -144,7 +219,15 @@ class Game {
     private initStates() {
         this.game.state.add(GameState.start, new StartState());
         this.game.state.add(GameState.main, new MainState());
-        this.game.state.start(GameState.start);
+        this.game.state.start(GameState.start, true, false, this.connection);
+    }
+
+    started(data) {
+        this.game.state.start(GameState.main, true, false, this.connection, data);
+    }
+
+    stopped() {
+        this.game.state.start(GameState.start, true, false, this.connection);
     }
 
     gameUpdate(data: IGameUpdate) {
@@ -156,12 +239,9 @@ class Game {
 
     create() {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        //this.game.world.setBounds(-1000, -1000, 2000, 2000);
-        this.game.add.plugin(Phaser.Plugin.Debug);
+        //this.game.add.plugin(Phaser.Plugin.Debug);
         this.game.stage.disableVisibilityChange = true;
         this.initStates();
-
-        this.connection.startGame();
     }
 
     render() {
