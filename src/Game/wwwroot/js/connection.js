@@ -4,7 +4,7 @@ var Connection = (function () {
         var _this = this;
         this.authHub = $.connection.authHub;
         this.gameHub = $.connection.gameHub;
-        $.connection.hub.logging = true;
+        $.connection.hub.logging = debug;
         this.authHub.client.message = function (data) {
             console.log(">> message: " + data);
         };

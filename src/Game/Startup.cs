@@ -3,6 +3,8 @@ using Game.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.AspNetCore.SignalR.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -16,6 +18,7 @@ namespace Game
         {
             RegisterGameServices(services);
 
+            services.AddRouting();
             services.AddSignalR(options => options.Hubs.EnableDetailedErrors = true);
         }
 
@@ -32,10 +35,19 @@ namespace Game
             loggerFactory.AddConsole(LogLevel.Trace);
             loggerFactory.AddDebug();
 
-            if (env.IsDevelopment())
-                app.UseDeveloperExceptionPage();
+            var isDevelopment = env.IsDevelopment();
 
-            app.UseFileServer(new FileServerOptions());
+            if (isDevelopment)
+            {
+                app.UseDeveloperExceptionPage();
+            }
+
+            var routeBuilder = new RouteBuilder(app);
+            var script = $"var debug={isDevelopment.ToString().ToLowerInvariant()};";
+            routeBuilder.MapGet("settings.js", c => c.Response.WriteAsync(script));
+            app.UseRouter(routeBuilder.Build());
+
+            app.UseFileServer();
 
             app.UseWebSockets();
             app.UseSignalR();

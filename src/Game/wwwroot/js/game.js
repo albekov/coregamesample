@@ -4,14 +4,22 @@ var __extends = (this && this.__extends) || function (d, b) {
     function __() { this.constructor = d; }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
 };
+function log() {
+    var args = [];
+    for (var _i = 0; _i < arguments.length; _i++) {
+        args[_i - 0] = arguments[_i];
+    }
+    if (debug)
+        console.log.apply(console, args);
+}
 var StartState = (function (_super) {
     __extends(StartState, _super);
     function StartState() {
         _super.call(this);
-        console.log('StartState.ctor()');
+        log('StartState.ctor()');
     }
     StartState.prototype.create = function () {
-        console.log('StartState.create');
+        log('StartState.create');
         this.game.world.setBounds(0, 0, this.game.width, this.game.height);
         var startText = this.game.add.text(this.game.world.centerX, this.game.world.centerY, 'START', {
             font: "65px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
@@ -29,11 +37,11 @@ var StartState = (function (_super) {
         logoutText.events.onInputUp.add(this.logout, this);
     };
     StartState.prototype.init = function (connection) {
-        console.log('StartState.init');
+        log('StartState.init');
         this.connection = connection;
     };
     StartState.prototype.preload = function () {
-        console.log('StartState.preload');
+        log('StartState.preload');
     };
     StartState.prototype.start = function () {
         this.connection.startGame();
@@ -47,10 +55,10 @@ var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.call(this);
-        console.log('MainState.ctor()');
+        log('MainState.ctor()');
     }
     MainState.prototype.create = function () {
-        console.log('MainState.create');
+        log('MainState.create');
         this.game.add.tileSprite(this.world.bounds.x, this.world.bounds.y, this.world.bounds.width, this.world.bounds.height, 'background');
         var stopText = this.game.add.text(10, 5, 'EXIT', {
             font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
@@ -62,24 +70,24 @@ var MainState = (function (_super) {
         this.game.input.onDown.add(this.clicked, this);
     };
     MainState.prototype.init = function (connection, data) {
-        console.log('MainState.init');
+        log('MainState.init');
         this.connection = connection;
         this.data = data;
         this.playerId = data.player.id;
-        console.log('playerId', this.playerId);
+        log('playerId', this.playerId);
         this.entities = [];
         var wi = data.world;
         this.world.setBounds(wi.x0, wi.y0, wi.width, wi.height);
     };
     MainState.prototype.clicked = function () {
-        console.log('clicked');
+        log('clicked');
         var x = this.game.input.activePointer.worldX;
         var y = this.game.input.activePointer.worldY;
-        console.log(x, y);
+        log(x, y);
         this.connection.moveTo(x, y);
     };
     MainState.prototype.preload = function () {
-        console.log('MainState.preload');
+        log('MainState.preload');
         this.game.load.image('background', '/images/deep-space.jpg');
     };
     MainState.prototype.update = function () {
@@ -98,8 +106,10 @@ var MainState = (function (_super) {
         }
     };
     MainState.prototype.render = function () {
-        this.game.debug.inputInfo(32, 40);
-        this.game.debug.cameraInfo(this.game.camera, 300, 40);
+        if (debug) {
+            this.game.debug.inputInfo(32, 40);
+            this.game.debug.cameraInfo(this.game.camera, 300, 40);
+        }
     };
     MainState.prototype.onExit = function () {
         this.connection.stopGame();
@@ -205,7 +215,6 @@ var Game = (function () {
         this.initStates();
     };
     Game.prototype.render = function () {
-        this.game.debug.inputInfo(32, 32);
     };
     Game.prototype.initLoginEvents = function () {
         var _this = this;
@@ -225,20 +234,20 @@ var Game = (function () {
         this.connection.logout();
     };
     Game.prototype.loggedIn = function () {
-        console.log('loggedIn');
+        log('loggedIn');
         this.showPage('game');
         this.start();
     };
     ;
     Game.prototype.loggedOut = function () {
-        console.log('loggedOut');
+        log('loggedOut');
         this.stop();
         $('#login-form').trigger('reset');
         this.showPage('login');
     };
     ;
     Game.prototype.logging = function () {
-        console.log('logging');
+        log('logging');
         this.showPage('loading');
     };
     ;

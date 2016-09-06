@@ -51,7 +51,7 @@ class Connection implements IConnection {
     constructor() {
         this.authHub = $.connection.authHub;
         this.gameHub = $.connection.gameHub;
-        $.connection.hub.logging = true;
+        $.connection.hub.logging = debug;
 
         this.authHub.client.message = data => {
             console.log(`>> message: ${data}`);
