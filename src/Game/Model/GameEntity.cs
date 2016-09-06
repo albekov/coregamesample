@@ -27,5 +27,8 @@ namespace Game.Model
 
         [JsonIgnore]
         public double Updated { get; set; }
+
+        [JsonIgnore]
+        public Point Target { get; set; }
     }
 }

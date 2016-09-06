@@ -5,6 +5,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Game.Model;
+using Game.Model.Actions;
 using JetBrains.Annotations;
 using Microsoft.Extensions.Logging;
 
@@ -16,6 +17,7 @@ namespace Game.Services
         private const double TickTime = 20;
 
         private readonly ILogger<MainGame> _logger;
+        private readonly PlayerManager _playerManager;
 
         private readonly PlayersHandler _playersHandler;
 
@@ -27,33 +29,38 @@ namespace Game.Services
         public MainGame(
             World world,
             PlayersHandler playersHandler,
+            PlayerManager playerManager,
             ILogger<MainGame> logger)
         {
             _world = world;
             _playersHandler = playersHandler;
+            _playerManager = playerManager;
             _logger = logger;
 
             _playersHandler.PlayerChanged += PlayersHandlerOnPlayerChanged;
+            _playersHandler.PlayerAction += PlayersHandlerOnPlayerAction;
         }
 
         public void Dispose()
         {
             _playersHandler.PlayerChanged -= PlayersHandlerOnPlayerChanged;
+            _playersHandler.PlayerAction -= PlayersHandlerOnPlayerAction;
         }
 
         private void PlayersHandlerOnPlayerChanged(object sender, PlayerChangedEventArgs args)
         {
-            _logger.LogInformation($"PlayerChanged {args.Type} {args.PlayerId}");
+            var player = _playerManager.GetPlayer(args.PlayerId);
+            _logger.LogInformation($"PlayerChanged {args.Type} {args.PlayerId}: '{player?.Name}'");
             switch (args.Type)
             {
                 case PlayerChangeType.Connected:
-                    _world.ConnectPlayer(args.PlayerId);
+                    var entity = _world.ConnectPlayer(player);
                     var worldInfo = _world.Info;
-                    _playersHandler.GetChannel(args.ConnectionId).start(worldInfo);
+                    _playersHandler.GetChannel(args.ConnectionId).start(new {world = worldInfo, player = entity});
                     break;
                 case PlayerChangeType.Disconnected:
+                    _world.DisconnectPlayer(player);
                     _playersHandler.GetChannel(args.ConnectionId).stop();
-                    _world.DisconnectPlayer(args.PlayerId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -126,6 +133,20 @@ namespace Game.Services
         private void SaveGameUpdate(string playerId, string connectionId, double time)
         {
             _updates[connectionId] = time;
+        }
+
+        private void PlayersHandlerOnPlayerAction(object sender, PlayerActionEventArgs e)
+        {
+            var player = _playerManager.GetPlayer(e.PlayerId);
+
+            var action = e.Action;
+
+            var actionMoveTo = action as PlayerActionMoveTo;
+
+            if (actionMoveTo!=null)
+            {
+                _world.MovePlayer(player, actionMoveTo.X, actionMoveTo.Y);
+            }
         }
 
         private static void SleepUntil(Stopwatch timer, double time)

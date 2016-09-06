@@ -4,7 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Game.Model;
+using Game.Model.Actions;
 using JetBrains.Annotations;
+using Microsoft.Extensions.Logging;
 
 namespace Game.Services
 {
@@ -12,6 +14,7 @@ namespace Game.Services
     public class PlayersHandler : IDisposable
     {
         private readonly ConnectionHandler _connectionHandler;
+        private readonly ILogger<PlayersHandler> _logger;
         private readonly PlayerManager _playerManager;
 
         private readonly ConcurrentDictionary<string, string> _playersByConnections =
@@ -19,8 +22,12 @@ namespace Game.Services
 
         private Func<string, dynamic> _getChannel;
 
-        public PlayersHandler(ConnectionHandler connectionHandler, PlayerManager playerManager)
+        public PlayersHandler(
+            ILogger<PlayersHandler> logger,
+            ConnectionHandler connectionHandler,
+            PlayerManager playerManager)
         {
+            _logger = logger;
             _connectionHandler = connectionHandler;
             _playerManager = playerManager;
 
@@ -33,6 +40,7 @@ namespace Game.Services
         }
 
         public event EventHandler<PlayerChangedEventArgs> PlayerChanged;
+        public event EventHandler<PlayerActionEventArgs> PlayerAction;
 
         private void ConnectionHandlerOnConnectionChanged(object sender, ConnectionChangedEventArgs args)
         {
@@ -100,6 +108,18 @@ namespace Game.Services
         private void OnPlayerChanged(PlayerChangeType type, string connectionId, string playerId)
         {
             PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, connectionId, playerId));
+        }
+
+        public void HandleAction(string connectionId, PlayerAction action)
+        {
+            string playerId;
+            if (!_playersByConnections.TryGetValue(connectionId, out playerId))
+            {
+                _logger.LogWarning($"Handle action. Unknown connection {connectionId}.");
+                return;
+            }
+
+            PlayerAction?.Invoke(this, new PlayerActionEventArgs(connectionId, playerId, action));
         }
     }
 }

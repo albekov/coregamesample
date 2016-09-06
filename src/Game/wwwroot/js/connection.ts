@@ -34,6 +34,8 @@ interface IConnection {
     onUpdate(data: any);
     startGame();
     stopGame();
+
+    moveTo(x, y: number);
 }
 
 class Connection implements IConnection {
@@ -64,13 +66,9 @@ class Connection implements IConnection {
         };
     }
 
-    startGame() {
-        this.gameHub.server.start();
-    }
-
-    stopGame() {
-        this.gameHub.server.stop();
-    }
+    startGame() { this.gameHub.server.start(); }
+    stopGame() { this.gameHub.server.stop(); }
+    moveTo(x, y: number) { this.gameHub.server.moveTo(x, y); }
 
     connect() {
         $.connection.hub.start()

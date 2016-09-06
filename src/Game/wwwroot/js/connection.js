@@ -15,12 +15,9 @@ var Connection = (function () {
             $('#status').text(data);
         };
     }
-    Connection.prototype.startGame = function () {
-        this.gameHub.server.start();
-    };
-    Connection.prototype.stopGame = function () {
-        this.gameHub.server.stop();
-    };
+    Connection.prototype.startGame = function () { this.gameHub.server.start(); };
+    Connection.prototype.stopGame = function () { this.gameHub.server.stop(); };
+    Connection.prototype.moveTo = function (x, y) { this.gameHub.server.moveTo(x, y); };
     Connection.prototype.connect = function () {
         var _this = this;
         $.connection.hub.start()

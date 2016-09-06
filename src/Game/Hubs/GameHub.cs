@@ -1,4 +1,5 @@
 ﻿using System.Threading.Tasks;
+using Game.Model.Actions;
 using Game.Services;
 using JetBrains.Annotations;
 using Microsoft.AspNetCore.SignalR;
@@ -35,6 +36,11 @@ namespace Game.Hubs
         public async Task Stop()
         {
             await _playersHandler.DisconnectPlayer(Context.ConnectionId);
+        }
+
+        public void MoveTo(float x, float y)
+        {
+            _playersHandler.HandleAction(Context.ConnectionId, new PlayerActionMoveTo(x, y));
         }
     }
 }

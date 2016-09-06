@@ -47,28 +47,40 @@ var MainState = (function (_super) {
     __extends(MainState, _super);
     function MainState() {
         _super.call(this);
-        this.follow = false;
         console.log('MainState.ctor()');
     }
     MainState.prototype.create = function () {
         console.log('MainState.create');
+        this.game.add.tileSprite(this.world.bounds.x, this.world.bounds.y, this.world.bounds.width, this.world.bounds.height, 'background');
         var stopText = this.game.add.text(10, 5, 'EXIT', {
             font: "18px 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
             fill: '#FFFFFF'
         });
-        //stopText.anchor.set(0.5);
         stopText.inputEnabled = true;
         stopText.events.onInputUp.add(this.onExit, this);
         stopText.fixedToCamera = true;
+        this.game.input.onDown.add(this.clicked, this);
     };
     MainState.prototype.init = function (connection, data) {
         console.log('MainState.init');
         this.connection = connection;
+        this.data = data;
+        this.playerId = data.player.id;
+        console.log('playerId', this.playerId);
         this.entities = [];
-        this.world.setBounds(data.x0, data.y0, data.width, data.height);
+        var wi = data.world;
+        this.world.setBounds(wi.x0, wi.y0, wi.width, wi.height);
+    };
+    MainState.prototype.clicked = function () {
+        console.log('clicked');
+        var x = this.game.input.activePointer.worldX;
+        var y = this.game.input.activePointer.worldY;
+        console.log(x, y);
+        this.connection.moveTo(x, y);
     };
     MainState.prototype.preload = function () {
         console.log('MainState.preload');
+        this.game.load.image('background', '/images/deep-space.jpg');
     };
     MainState.prototype.update = function () {
         if (Game.data) {
@@ -96,17 +108,14 @@ var MainState = (function (_super) {
         return this.entities[id];
     };
     MainState.prototype.addEntity = function (re) {
-        //if (!this.follow) {
-        //    this.follow = true;
-        //    this.game.world.setBounds(-500, -500, 1000, 1000);
-        //    //this.camera.setPosition(-200, -200);
-        //    this.camera.follow(g, Phaser.Camera.FOLLOW_LOCKON);
-        //    g.lineStyle(4, 0x0000FF);
-        //}
         var g = this.createEntity(re);
         this.physics.enable(g, Phaser.Physics.ARCADE);
         g.body.velocity.x = re.dx;
         g.body.velocity.y = re.dy;
+        if (re.type === 'player' && re.id === this.playerId) {
+            this.camera.follow(g, Phaser.Camera.FOLLOW_LOCKON, 0.1, 0.1);
+            this.camera.deadzone = new Phaser.Rectangle(150, 150, this.camera.width - 300, this.camera.height - 300);
+        }
         re.obj = g;
         this.entities[re.id] = re;
     };

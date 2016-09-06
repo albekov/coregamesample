@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Model;
+using Game.Utils;
 using JetBrains.Annotations;
 
 namespace Game.Services
@@ -39,10 +40,10 @@ namespace Game.Services
                     Id = Guid.NewGuid().ToString(),
                     Type = "food",
                     Name = $"Entity {i}",
-                    X = GetRandom(100, 500),
-                    Y = GetRandom(100, 300),
-                    DX = GetRandom(-100, 100, 1),
-                    DY = GetRandom(-100, 100, 1),
+                    X = R.Between(100, 500),
+                    Y = R.Between(100, 300),
+                    DX = R.Between(-25, 25, 1),
+                    DY = R.Between(-25, 25, 1),
                     Updated = 0
                 });
         }
@@ -55,24 +56,47 @@ namespace Game.Services
                 entity.X += entity.DX*dt;
                 entity.Y += entity.DY*dt;
 
-                if ((entity.X < 6) || (entity.X > 594))
+                if (entity.Type == "food")
                 {
-                    entity.DX = -entity.DX;
-                    entity.X += entity.DX*dt;
-                    entity.Updated = time;
-                }
-                if ((entity.Y < 6) || (entity.Y > 394))
-                {
-                    entity.DY = -entity.DY;
-                    entity.Y += entity.DY*dt;
-                    entity.Updated = time;
+                    if ((entity.X < 6) || (entity.X > 594))
+                    {
+                        entity.DX = -entity.DX;
+                        entity.X += entity.DX*dt;
+                        entity.Updated = time;
+                    }
+                    if ((entity.Y < 6) || (entity.Y > 394))
+                    {
+                        entity.DY = -entity.DY;
+                        entity.Y += entity.DY*dt;
+                        entity.Updated = time;
+                    }
+
+                    if (R.NextDouble() < 0.001)
+                    {
+                        entity.DX = R.Between(-25, 25, 1);
+                        entity.DY = R.Between(-25, 25, 1);
+                        entity.Updated = time;
+                    }
                 }
 
-                if (R.NextDouble() < 0.001)
+                if (entity.Target != null)
                 {
-                    entity.DX = GetRandom(-100, 100, 1);
-                    entity.DY = GetRandom(-100, 100, 1);
-                    entity.Updated = time;
+                    if (entity.Target.IsNear(entity.X, entity.Y, 20))
+                    {
+                        SetSpeed(entity, time, 0, 0);
+                        entity.Target = null;
+                    }
+                    else
+                    {
+                        var dx = entity.Target.X - entity.X;
+                        var dy = entity.Target.Y - entity.Y;
+
+                        var d = (float) Math.Sqrt(dx*dx + dy*dy);
+                        dx = 100*dx/d;
+                        dy = 100*dy/d;
+
+                        SetSpeed(entity, time, dx, dy);
+                    }
                 }
 
                 if (time - entity.Updated >= 5000)
@@ -80,18 +104,54 @@ namespace Game.Services
             }
         }
 
-        private static float GetRandom(double from, double to, int decimals = 0)
+        private void SetSpeed(GameEntity entity, double time, float? dx, float? dy)
         {
-            return (float) Math.Round(R.NextDouble()*(to - from) + from, decimals);
+            if (dx.HasValue)
+            {
+                if (Math.Abs(dx.Value - entity.DX) > 0.1)
+                {
+                    entity.DX = dx.Value;
+                    entity.Updated = time;
+                }
+            }
+            if (dy.HasValue)
+            {
+                if (Math.Abs(dy.Value - entity.DY) > 0.1)
+                {
+                    entity.DY = dy.Value;
+                    entity.Updated = time;
+                }
+            }
         }
 
-        public bool ConnectPlayer(string player)
+        public GameEntity ConnectPlayer(Player player)
         {
-            return true;
+            if (_entities.Any(e => e.Id == player.Id))
+                throw new ArgumentException();
+
+            var playerEntity = CreatePlayerEntity(player);
+            _entities.Add(playerEntity);
+
+            return playerEntity;
         }
 
-        public bool DisconnectPlayer(string player)
+        private GameEntity CreatePlayerEntity(Player player)
         {
+            return new GameEntity
+            {
+                Id = player.Id,
+                Name = player.Name,
+                Type = "player",
+                X = player.X,
+                Y = player.Y
+            };
+        }
+
+        public bool DisconnectPlayer(Player player)
+        {
+            if (player == null) return false;
+            if (_entities.RemoveAll(e => e.Id == player.Id) != 1) return false;
+
             return true;
         }
 
@@ -99,6 +159,13 @@ namespace Game.Services
         {
             var updated = _entities.Where(e => e.Updated >= updateTime).ToList();
             return updated;
+        }
+
+        public void MovePlayer(Player player, float x, float y)
+        {
+            var entity = _entities.FirstOrDefault(e => e.Id == player.Id);
+
+            entity.Target = new Point(x, y);
         }
     }
 }
