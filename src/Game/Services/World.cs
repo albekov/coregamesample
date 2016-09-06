@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Game.Model;
@@ -11,12 +10,10 @@ namespace Game.Services
     [UsedImplicitly]
     public class World
     {
+        private const double MinTimeToUpdate = 100;
         private static readonly Random R = new Random();
 
         private readonly List<GameEntity> _entities = new List<GameEntity>();
-
-        private ConcurrentDictionary<string, Player> _players =
-            new ConcurrentDictionary<string, Player>();
 
         public WorldInfo Info { get; set; }
 
@@ -24,26 +21,26 @@ namespace Game.Services
         {
             Info = new WorldInfo
             {
-                X0 = -1000,
-                Y0 = -1000,
-                Width = 2000,
-                Height = 2000
+                XMin = -1000,
+                YMin = -1000,
+                XMax = 1000,
+                YMax = 1000
             };
             InitEntities();
         }
 
         private void InitEntities()
         {
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < 100; i++)
                 _entities.Add(new GameEntity
                 {
                     Id = Guid.NewGuid().ToString(),
                     Type = "food",
                     Name = $"Entity {i}",
-                    X = R.Between(100, 500),
-                    Y = R.Between(100, 300),
-                    DX = R.Between(-25, 25, 1),
-                    DY = R.Between(-25, 25, 1),
+                    X = R.Between(Info.XMin+50, Info.XMax-50),
+                    Y = R.Between(Info.YMin + 50, Info.YMax - 50),
+                    DX = R.Between(-100, 100, 1),
+                    DY = R.Between(-100, 100, 1),
                     Updated = 0
                 });
         }
@@ -58,30 +55,23 @@ namespace Game.Services
 
                 if (entity.Type == "food")
                 {
-                    if ((entity.X < 6) || (entity.X > 594))
+                    if ((entity.X < Info.XMin + 10) || (entity.X > Info.XMax - 10))
                     {
-                        entity.DX = -entity.DX;
+                        SetSpeed(entity, time, -entity.DX);
                         entity.X += entity.DX*dt;
-                        entity.Updated = time;
                     }
-                    if ((entity.Y < 6) || (entity.Y > 394))
+                    if ((entity.Y < Info.YMin + 10) || (entity.Y > Info.YMax - 10))
                     {
-                        entity.DY = -entity.DY;
+                        SetSpeed(entity, time, dy: -entity.DY);
                         entity.Y += entity.DY*dt;
-                        entity.Updated = time;
                     }
 
-                    if (R.NextDouble() < 0.001)
-                    {
-                        entity.DX = R.Between(-25, 25, 1);
-                        entity.DY = R.Between(-25, 25, 1);
-                        entity.Updated = time;
-                    }
+                    if (R.NextDouble() < 0.01)
+                        SetSpeed(entity, time, R.Between(-100, 100, 1), R.Between(-100, 100, 1));
                 }
 
                 if (entity.Target != null)
-                {
-                    if (entity.Target.IsNear(entity.X, entity.Y, 20))
+                    if (entity.Target.IsNear(entity.X, entity.Y, 5))
                     {
                         SetSpeed(entity, time, 0, 0);
                         entity.Target = null;
@@ -97,31 +87,32 @@ namespace Game.Services
 
                         SetSpeed(entity, time, dx, dy);
                     }
-                }
 
                 if (time - entity.Updated >= 5000)
                     entity.Updated = time;
             }
         }
 
-        private void SetSpeed(GameEntity entity, double time, float? dx, float? dy)
+        private void SetSpeed(GameEntity entity, double time, float? dx = null, float? dy = null)
         {
             if (dx.HasValue)
-            {
                 if (Math.Abs(dx.Value - entity.DX) > 0.1)
                 {
                     entity.DX = dx.Value;
-                    entity.Updated = time;
+                    UpdateTime(entity, time);
                 }
-            }
             if (dy.HasValue)
-            {
                 if (Math.Abs(dy.Value - entity.DY) > 0.1)
                 {
                     entity.DY = dy.Value;
-                    entity.Updated = time;
+                    UpdateTime(entity, time);
                 }
-            }
+        }
+
+        private static void UpdateTime(GameEntity entity, double time)
+        {
+            if (time - entity.Updated >= MinTimeToUpdate)
+                entity.Updated = time;
         }
 
         public GameEntity ConnectPlayer(Player player)

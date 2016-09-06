@@ -98,7 +98,7 @@ class MainState extends Phaser.State {
         this.entities = [];
 
         const wi = data.world;
-        this.world.setBounds(wi.x0, wi.y0, wi.width, wi.height);
+        this.world.setBounds(wi.xmin, wi.ymin, wi.xmax - wi.xmin, wi.ymax - wi.ymin);
     }
 
     clicked() {
