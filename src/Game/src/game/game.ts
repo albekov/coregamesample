@@ -1,4 +1,4 @@
-﻿/// <reference path="../../typings/_references.ts" />
+﻿import { IConnection } from './connection';
 
 declare var debug: boolean;
 
@@ -159,7 +159,7 @@ class MainState extends Phaser.State {
     }
 
     addEntity(re: IGameEntity) {
-        const g = this.createEntity(re);
+        const g: Phaser.Sprite = (this.createEntity(re)) as any;
         this.physics.enable(g, Phaser.Physics.ARCADE);
         g.body.velocity.x = re.dx;
         g.body.velocity.y = re.dy;
@@ -229,16 +229,24 @@ interface IGameEntity {
     y: number;
     dx: number;
     dy: number;
-    obj: Phaser.Graphics;
+    obj: any;
 }
 
-class Game {
+export class Game {
     private connection: IConnection;
     private game: Phaser.Game;
     static data: IGameUpdate;
 
     constructor(connection: IConnection) {
         this.connection = connection;
+    }
+
+    init() {
+        this.initConnectionEvents();
+        this.initLoginEvents();
+    }
+
+    private initConnectionEvents() {
         this.connection.onLoggedIn = () => this.loggedIn();
         this.connection.onLoggedOut = () => this.loggedOut();
         this.connection.onLogging = () => this.logging();
@@ -247,8 +255,6 @@ class Game {
         this.connection.onStop = () => this.stopped();
 
         this.connection.onUpdate = data => this.gameUpdate(data);
-
-        this.initLoginEvents();
     }
 
     private start() {

@@ -1,0 +1,8 @@
+{
+  "globalDependencies": {},
+  "globalDevDependencies": {
+    "jquery": "registry:dt/jquery#1.10.0+20160704162008",
+    "phaser": "github:photonstorm/phaser/typescript/typings.json",
+    "signalr": "registry:dt/signalr#2.2.0+20160509082439"
+  }
+}

@@ -1,7 +1,7 @@
-﻿/// <reference path="../../typings/_references.ts" />
+﻿declare var debug: boolean;
 
 // ReSharper disable once InconsistentNaming
-interface SignalR {
+interface MySignalR extends SignalR {
     authHub: IAuthHub;
     gameHub: any;
 }
@@ -17,12 +17,12 @@ interface IAuthHubClient {
     status(msg: string): void;
 }
 
-interface IAuthHub {
+export interface IAuthHub {
     server: IAuthHubServer;
     client: IAuthHubClient;
 }
 
-interface IConnection {
+export interface IConnection {
     onLoggedIn();
     onLoggedOut();
     onLogging();
@@ -38,7 +38,7 @@ interface IConnection {
     moveTo(x, y: number);
 }
 
-class Connection implements IConnection {
+export class Connection implements IConnection {
     private authHub: IAuthHub;
     private gameHub: any;
     onLoggedIn: () => void;
@@ -49,9 +49,10 @@ class Connection implements IConnection {
     onUpdate: (data: any) => void;
 
     constructor() {
-        this.authHub = $.connection.authHub;
-        this.gameHub = $.connection.gameHub;
-        $.connection.hub.logging = debug;
+        const con = $.connection as MySignalR;
+        this.authHub = con.authHub;
+        this.gameHub = con.gameHub;
+        con.hub.logging = debug;
 
         this.authHub.client.message = data => {
             console.log(`>> message: ${data}`);
