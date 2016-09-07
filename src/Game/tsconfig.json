@@ -1,4 +1,5 @@
 {
+  "compileOnSave": false,
   "compilerOptions": {
     "noImplicitAny": false,
     "noEmitOnError": true,
@@ -11,8 +12,6 @@
     "experimentalDecorators": true,
     "suppressImplicitAnyIndexErrors": true
   },
-  "compileOnSave": false,
-  "buildOnSave": false,
   "exclude": [
     "node_modules",
     "wwwroot"
