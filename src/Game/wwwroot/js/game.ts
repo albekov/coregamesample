@@ -121,14 +121,23 @@ class MainState extends Phaser.State {
             const data = Game.data;
             Game.data = null;
 
-            if (data.entities && data.entities.updated) {
-                const entities = data.entities.updated;
+            if (data.entities) {
+                if (data.entities.updated) {
+                    const entities = data.entities.updated;
 
-                for (const re of entities) {
-                    if (!this.hasEntity(re.id))
-                        this.addEntity(re);
+                    for (const re of entities) {
+                        if (!this.hasEntity(re.id))
+                            this.addEntity(re);
 
-                    this.updateEntity(re);
+                        this.updateEntity(re);
+                    }
+                }
+                if (data.entities.removed) {
+                    const entities = data.entities.removed;
+
+                    for (const id of entities) {
+                        this.removeEntity(id);
+                    }
                 }
             }
         }
@@ -190,6 +199,12 @@ class MainState extends Phaser.State {
         }
         return g;
     }
+
+    removeEntity(id: string) {
+        const entity = this.getEntityById(id);
+        entity.obj.destroy();
+        delete this.entities[id];
+    }
 }
 
 class GameState {
@@ -203,6 +218,7 @@ interface IGameUpdate {
 
 interface IEntitiesUpdate {
     updated: IGameEntity[];
+    removed: string[];
 }
 
 interface IGameEntity {

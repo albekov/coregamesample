@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
@@ -116,16 +117,13 @@ namespace Game.Services
             double updateTime = 0;
             _updates.TryGetValue(connectionId, out updateTime);
 
-            var updated = _world.GetWorldUpdate(updateTime);
-            if (!updated.Any())
+            var entitiesUpdate = _world.GetWorldUpdate(playerId, updateTime);
+            if (entitiesUpdate == null)
                 return null;
 
             var update = new GameUpdate
             {
-                Entities = new EntitiesUpdate
-                {
-                    Updated = updated
-                }
+                Entities = entitiesUpdate
             };
             return update;
         }

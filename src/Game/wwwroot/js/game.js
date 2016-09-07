@@ -94,13 +94,22 @@ var MainState = (function (_super) {
         if (Game.data) {
             var data = Game.data;
             Game.data = null;
-            if (data.entities && data.entities.updated) {
-                var entities = data.entities.updated;
-                for (var _i = 0, entities_1 = entities; _i < entities_1.length; _i++) {
-                    var re = entities_1[_i];
-                    if (!this.hasEntity(re.id))
-                        this.addEntity(re);
-                    this.updateEntity(re);
+            if (data.entities) {
+                if (data.entities.updated) {
+                    var entities = data.entities.updated;
+                    for (var _i = 0, entities_1 = entities; _i < entities_1.length; _i++) {
+                        var re = entities_1[_i];
+                        if (!this.hasEntity(re.id))
+                            this.addEntity(re);
+                        this.updateEntity(re);
+                    }
+                }
+                if (data.entities.removed) {
+                    var entities = data.entities.removed;
+                    for (var _a = 0, entities_2 = entities; _a < entities_2.length; _a++) {
+                        var id = entities_2[_a];
+                        this.removeEntity(id);
+                    }
                 }
             }
         }
@@ -152,6 +161,11 @@ var MainState = (function (_super) {
                 g.drawRect(-5, -5, 10, 10);
         }
         return g;
+    };
+    MainState.prototype.removeEntity = function (id) {
+        var entity = this.getEntityById(id);
+        entity.obj.destroy();
+        delete this.entities[id];
     };
     return MainState;
 }(Phaser.State));

@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using System.Collections.Generic;
+using Newtonsoft.Json;
 
 namespace Game.Model
 {
@@ -30,5 +31,26 @@ namespace Game.Model
 
         [JsonIgnore]
         public Point Target { get; set; }
+
+        protected bool Equals(GameEntity other)
+        {
+            return string.Equals(Id, other.Id) && string.Equals(Type, other.Type);
+        }
+
+        public override bool Equals(object obj)
+        {
+            if (ReferenceEquals(null, obj)) return false;
+            if (ReferenceEquals(this, obj)) return true;
+            if (obj.GetType() != GetType()) return false;
+            return Equals((GameEntity) obj);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                return ((Id?.GetHashCode() ?? 0)*397) ^ (Type?.GetHashCode() ?? 0);
+            }
+        }
     }
 }
