@@ -1,4 +1,6 @@
-﻿declare var debug: boolean;
+﻿import { Log } from '../utils';
+
+declare var debug: boolean;
 
 // ReSharper disable once InconsistentNaming
 interface MySignalR extends SignalR {
@@ -55,7 +57,7 @@ export class Connection implements IConnection {
         con.hub.logging = debug;
 
         this.authHub.client.message = data => {
-            console.log(`>> message: ${data}`);
+            Log.info(`Message: ${data}`);
         };
 
         this.gameHub.client.start = data => this.onStart(data);

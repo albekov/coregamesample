@@ -1,22 +1,18 @@
-﻿import { IConnection } from './connection';
+﻿import { Log } from '../utils';
+import { IConnection } from './connection';
 
 declare var debug: boolean;
-
-function log(...args) {
-    if (debug)
-        console.log.apply(console, args);
-}
 
 class StartState extends Phaser.State {
     private connection: IConnection;
 
     constructor() {
         super();
-        log('StartState.ctor()');
+        Log.info('StartState.ctor()');
     }
 
     create() {
-        log('StartState.create');
+        Log.info('StartState.create');
         this.game.world.setBounds(0, 0, this.game.width, this.game.height);
         const startText = this.game.add.text(
             this.game.world.centerX,
@@ -43,12 +39,12 @@ class StartState extends Phaser.State {
     }
 
     init(connection: IConnection) {
-        log('StartState.init');
+        Log.info('StartState.init');
         this.connection = connection;
     }
 
     preload() {
-        log('StartState.preload');
+        Log.info('StartState.preload');
     }
 
     start() {
@@ -67,11 +63,11 @@ class MainState extends Phaser.State {
 
     constructor() {
         super();
-        log('MainState.ctor()');
+        Log.info('MainState.ctor()');
     }
 
     create() {
-        log('MainState.create');
+        Log.info('MainState.create');
 
         this.game.add.tileSprite(this.world.bounds.x, this.world.bounds.y, this.world.bounds.width, this.world.bounds.height, 'background');
 
@@ -90,11 +86,11 @@ class MainState extends Phaser.State {
     }
 
     init(connection: IConnection, data: any) {
-        log('MainState.init');
+        Log.info('MainState.init');
         this.connection = connection;
         this.data = data;
         this.playerId = data.player.id;
-        log('playerId', this.playerId);
+        Log.info('playerId', this.playerId);
         this.entities = [];
 
         const wi = data.world;
@@ -102,15 +98,13 @@ class MainState extends Phaser.State {
     }
 
     clicked() {
-        log('clicked');
         var x = this.game.input.activePointer.worldX;
         var y = this.game.input.activePointer.worldY;
-        log(x, y);
         this.connection.moveTo(x, y);
     }
 
     preload() {
-        log('MainState.preload');
+        Log.info('MainState.preload');
         this.game.load.image('background', '/images/deep-space.jpg');
     }
 
@@ -206,7 +200,7 @@ class MainState extends Phaser.State {
             entity.obj.destroy();
             delete this.entities[id];
         } else {
-            log('entity not found: ', id);
+            Log.warn('entity not found: ', id);
         }
     }
 }
@@ -339,20 +333,20 @@ export class Game {
     }
 
     loggedIn() {
-        log('loggedIn');
+        Log.info('loggedIn');
         this.showPage('game');
         this.start();
     };
 
     loggedOut() {
-        log('loggedOut');
+        Log.info('loggedOut');
         this.stop();
         $('#login-form').trigger('reset');
         this.showPage('login');
     };
 
     logging() {
-        log('logging');
+        Log.info('logging');
         this.showPage('loading');
     };
 
