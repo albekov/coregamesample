@@ -109,7 +109,11 @@ namespace Game.Services
                 var toRemove = _toRemove.ToList();
                 _toRemove = new ConcurrentBag<string>();
                 foreach (var id in toRemove)
+                {
+                    if (!_entities.ContainsKey(id))
+                        throw new InvalidOperationException();
                     _entities.Remove(id);
+                }
             }
 
             if (_toAdd.Any())
@@ -117,7 +121,11 @@ namespace Game.Services
                 var toAdd = _toAdd.ToList();
                 _toAdd = new ConcurrentBag<GameEntity>();
                 foreach (var entity in toAdd)
+                {
+                    if (_entities.ContainsKey(entity.Id))
+                        throw new InvalidOperationException();
                     _entities.Add(entity.Id, entity);
+                }
             }
         }
 
@@ -170,6 +178,9 @@ namespace Game.Services
         {
             if (player == null) return false;
             _toRemove.Add(player.Id);
+
+            HashSet<string> visible;
+            _visible.TryRemove(player.Id, out visible);
 
             return true;
         }

@@ -202,8 +202,12 @@ class MainState extends Phaser.State {
 
     removeEntity(id: string) {
         const entity = this.getEntityById(id);
-        entity.obj.destroy();
-        delete this.entities[id];
+        if (entity) {
+            entity.obj.destroy();
+            delete this.entities[id];
+        } else {
+            log('entity not found: ', id);
+        }
     }
 }
 
@@ -287,7 +291,9 @@ export class Game {
     }
 
     stopped() {
-        this.game.state.start(GameState.start, true, false, this.connection);
+        if (this.game) {
+            this.game.state.start(GameState.start, true, false, this.connection);
+        }
     }
 
     gameUpdate(data: IGameUpdate) {
@@ -299,7 +305,6 @@ export class Game {
 
     create() {
         this.game.physics.startSystem(Phaser.Physics.ARCADE);
-        //this.game.add.plugin(Phaser.Plugin.Debug);
         this.game.stage.disableVisibilityChange = true;
         this.initStates();
     }

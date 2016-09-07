@@ -49,12 +49,12 @@ namespace Game.Services
                 case ConnectionChangedType.Opened:
                     break;
                 case ConnectionChangedType.Closed:
-                    DisconnectPlayer(args.ConnectionId);
+                    DisconnectPlayer(args.ConnectionId).Wait();
                     break;
                 case ConnectionChangedType.Login:
                     break;
                 case ConnectionChangedType.Logout:
-                    DisconnectPlayer(args.ConnectionId);
+                    DisconnectPlayer(args.ConnectionId).Wait();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
