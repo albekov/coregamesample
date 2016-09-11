@@ -4,7 +4,9 @@
   "description": "Sample game built with ASP.NET Core",
   "main": "",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "typings": "typings install",
+    "build": "webpack"
   },
   "author": "",
   "license": "ISC",

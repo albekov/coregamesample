@@ -49,7 +49,7 @@
   },
 
   "scripts": {
-    "prepublish": [ "npm install", "typings install", "webpack" ],
+    "prepublish": [ "npm install", "npm run typings", "npm run build" ],
     "postpublish": [ "dotnet publish-iis --publish-folder %publish:OutputPath% --framework %publish:FullTargetFramework%" ]
   }
 }
