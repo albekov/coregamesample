@@ -16,7 +16,6 @@ interface IAuthHubServer {
 
 interface IAuthHubClient {
     message(msg: string): void;
-    status(msg: string): void;
 }
 
 export interface IAuthHub {
@@ -63,10 +62,6 @@ export class Connection implements IConnection {
         this.gameHub.client.start = data => this.onStart(data);
         this.gameHub.client.stop = () => this.onStop();
         this.gameHub.client.update = data => this.onUpdate(data);
-
-        this.authHub.client.status = data => {
-            $('#status').text(data);
-        };
     }
 
     startGame() { this.gameHub.server.start(); }

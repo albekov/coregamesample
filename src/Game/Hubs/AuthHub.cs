@@ -18,13 +18,6 @@ namespace Game.Hubs
         {
             _log = log;
             _connectionHandler = connectionHandler;
-
-            connectionHandler.StatusChanged += ConnectionHandlerOnStatusChanged;
-        }
-
-        private void ConnectionHandlerOnStatusChanged(object sender, string s)
-        {
-            Clients.All.Status(s);
         }
 
         public override async Task OnConnected()
@@ -63,12 +56,6 @@ namespace Game.Hubs
         public async void Logout()
         {
             await _connectionHandler.Logout(Context.ConnectionId);
-        }
-
-        protected override void Dispose(bool disposing)
-        {
-            _connectionHandler.StatusChanged -= ConnectionHandlerOnStatusChanged;
-            base.Dispose(disposing);
         }
     }
 }

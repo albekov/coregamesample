@@ -28,17 +28,12 @@ namespace Game.Services
             _sessions[session1.Id] = session1;
         }
 
-        private string Status => $"users: {_users.Count}, sessions: {_sessions.Count}, connections: {_connections.Count}";
-
         public event EventHandler<ConnectionChangedEventArgs> ConnectionChanged;
-
-        public event EventHandler<string> StatusChanged;
 
         public void OpenConnection(string connectionId)
         {
             _connections[connectionId] = null;
             OnConnectionChanged(ConnectionChangedType.Opened, connectionId);
-            OnStatusChanged();
         }
 
         public async Task CloseConnection(string connectionId)
@@ -47,7 +42,6 @@ namespace Game.Services
             _connections.TryRemove(connectionId, out sessionId);
 
             OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
-            OnStatusChanged();
 
             await Task.FromResult((object) null);
         }
@@ -65,7 +59,6 @@ namespace Game.Services
             _connections[connectionId] = session.Id;
 
             OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
-            OnStatusChanged();
 
             return await Task.FromResult(session.Id);
         }
@@ -83,7 +76,6 @@ namespace Game.Services
             _connections[connectionId] = session.Id;
 
             OnConnectionChanged(ConnectionChangedType.Login, connectionId);
-            OnStatusChanged();
 
             return await Task.FromResult(session.Id);
         }
@@ -131,7 +123,6 @@ namespace Game.Services
                 GameSession session;
                 _sessions.TryRemove(sessionId, out session);
 
-                OnStatusChanged();
                 OnConnectionChanged(ConnectionChangedType.Logout, connectionId);
             }
             await Task.FromResult((object) null);
@@ -140,11 +131,6 @@ namespace Game.Services
         private void OnConnectionChanged(ConnectionChangedType type, string connectionId)
         {
             ConnectionChanged?.Invoke(this, new ConnectionChangedEventArgs(type, connectionId));
-        }
-
-        private void OnStatusChanged()
-        {
-            StatusChanged?.Invoke(this, Status);
         }
     }
 }
