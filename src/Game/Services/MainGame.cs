@@ -48,19 +48,19 @@ namespace Game.Services
             _playersHandler.PlayerAction -= PlayersHandlerOnPlayerAction;
         }
 
-        private void PlayersHandlerOnPlayerChanged(object sender, PlayerChangedEventArgs args)
+        private async Task PlayersHandlerOnPlayerChanged(object sender, PlayerChangedEventArgs args)
         {
             var player = _playerManager.GetPlayer(args.PlayerId);
             _logger.LogInformation($"PlayerChanged {args.Type} {args.PlayerId}: '{player?.Name}'");
             switch (args.Type)
             {
                 case PlayerChangeType.Connected:
-                    var entity = _world.ConnectPlayer(player);
+                    var entity = await _world.ConnectPlayer(player);
                     var worldInfo = _world.Info;
                     _playersHandler.GetChannel(args.ConnectionId).start(new {world = worldInfo, player = entity});
                     break;
                 case PlayerChangeType.Disconnected:
-                    _world.DisconnectPlayer(player);
+                    await _world.DisconnectPlayer(player);
                     _playersHandler.GetChannel(args.ConnectionId).stop();
                     break;
                 default:
@@ -133,7 +133,7 @@ namespace Game.Services
             _updates[connectionId] = time;
         }
 
-        private void PlayersHandlerOnPlayerAction(object sender, PlayerActionEventArgs e)
+        private async Task PlayersHandlerOnPlayerAction(object sender, PlayerActionEventArgs e)
         {
             var player = _playerManager.GetPlayer(e.PlayerId);
 
@@ -145,6 +145,8 @@ namespace Game.Services
             {
                 _world.MovePlayer(player, actionMoveTo.X, actionMoveTo.Y);
             }
+
+            await Task.FromResult((object) null);
         }
 
         private static void SleepUntil(Stopwatch timer, double time)

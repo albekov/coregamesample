@@ -26,7 +26,7 @@ namespace Game.Hubs
 
             await Clients.Caller.Message("Connected");
 
-            _connectionHandler.OpenConnection(Context.ConnectionId);
+            await _connectionHandler.OpenConnection(Context.ConnectionId);
         }
 
         public override async Task OnDisconnected(bool stopCalled)

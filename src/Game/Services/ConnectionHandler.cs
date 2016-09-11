@@ -28,12 +28,12 @@ namespace Game.Services
             _sessions[session1.Id] = session1;
         }
 
-        public event EventHandler<ConnectionChangedEventArgs> ConnectionChanged;
+        public event AsyncEventHandler<ConnectionChangedEventArgs> ConnectionChanged;
 
-        public void OpenConnection(string connectionId)
+        public async Task OpenConnection(string connectionId)
         {
             _connections[connectionId] = null;
-            OnConnectionChanged(ConnectionChangedType.Opened, connectionId);
+            await OnConnectionChanged(ConnectionChangedType.Opened, connectionId);
         }
 
         public async Task CloseConnection(string connectionId)
@@ -41,7 +41,7 @@ namespace Game.Services
             string sessionId;
             _connections.TryRemove(connectionId, out sessionId);
 
-            OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
+            await OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
 
             await Task.FromResult((object) null);
         }
@@ -58,7 +58,7 @@ namespace Game.Services
 
             _connections[connectionId] = session.Id;
 
-            OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
+            await OnConnectionChanged(ConnectionChangedType.Closed, connectionId);
 
             return await Task.FromResult(session.Id);
         }
@@ -75,7 +75,7 @@ namespace Game.Services
 
             _connections[connectionId] = session.Id;
 
-            OnConnectionChanged(ConnectionChangedType.Login, connectionId);
+            await OnConnectionChanged(ConnectionChangedType.Login, connectionId);
 
             return await Task.FromResult(session.Id);
         }
@@ -123,14 +123,15 @@ namespace Game.Services
                 GameSession session;
                 _sessions.TryRemove(sessionId, out session);
 
-                OnConnectionChanged(ConnectionChangedType.Logout, connectionId);
+                await OnConnectionChanged(ConnectionChangedType.Logout, connectionId);
             }
             await Task.FromResult((object) null);
         }
 
-        private void OnConnectionChanged(ConnectionChangedType type, string connectionId)
+        private async Task OnConnectionChanged(ConnectionChangedType type, string connectionId)
         {
-            ConnectionChanged?.Invoke(this, new ConnectionChangedEventArgs(type, connectionId));
+            if (ConnectionChanged != null)
+                await ConnectionChanged(this, new ConnectionChangedEventArgs(type, connectionId));
         }
     }
 }

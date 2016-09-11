@@ -38,9 +38,9 @@ namespace Game.Hubs
             await _playersHandler.DisconnectPlayer(Context.ConnectionId);
         }
 
-        public void MoveTo(float x, float y)
+        public async Task MoveTo(float x, float y)
         {
-            _playersHandler.HandleAction(Context.ConnectionId, new PlayerActionMoveTo(x, y));
+            await _playersHandler.HandleAction(Context.ConnectionId, new PlayerActionMoveTo(x, y));
         }
     }
 }

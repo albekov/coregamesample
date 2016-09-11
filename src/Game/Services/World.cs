@@ -2,6 +2,7 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Game.Model;
 using Game.Utils;
 using JetBrains.Annotations;
@@ -151,7 +152,7 @@ namespace Game.Services
                 entity.Updated = time;
         }
 
-        public GameEntity ConnectPlayer(Player player)
+        public async Task<GameEntity> ConnectPlayer(Player player)
         {
             if (_entities.ContainsKey(player.Id))
                 throw new ArgumentException();
@@ -159,7 +160,7 @@ namespace Game.Services
             var playerEntity = CreatePlayerEntity(player);
             _toAdd.Add(playerEntity);
 
-            return playerEntity;
+            return await Task.FromResult(playerEntity);
         }
 
         private GameEntity CreatePlayerEntity(Player player)
@@ -174,7 +175,7 @@ namespace Game.Services
             };
         }
 
-        public bool DisconnectPlayer(Player player)
+        public async Task<bool> DisconnectPlayer(Player player)
         {
             if (player == null) return false;
             _toRemove.Add(player.Id);
@@ -182,7 +183,7 @@ namespace Game.Services
             HashSet<string> visible;
             _visible.TryRemove(player.Id, out visible);
 
-            return true;
+            return await Task.FromResult(true);
         }
 
         public EntitiesUpdate GetWorldUpdate(string playerId, double updateTime)

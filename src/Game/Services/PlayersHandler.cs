@@ -39,22 +39,22 @@ namespace Game.Services
             _connectionHandler.ConnectionChanged -= ConnectionHandlerOnConnectionChanged;
         }
 
-        public event EventHandler<PlayerChangedEventArgs> PlayerChanged;
-        public event EventHandler<PlayerActionEventArgs> PlayerAction;
+        public event AsyncEventHandler<PlayerChangedEventArgs> PlayerChanged;
+        public event AsyncEventHandler<PlayerActionEventArgs> PlayerAction;
 
-        private void ConnectionHandlerOnConnectionChanged(object sender, ConnectionChangedEventArgs args)
+        private async Task ConnectionHandlerOnConnectionChanged(object sender, ConnectionChangedEventArgs args)
         {
             switch (args.Type)
             {
                 case ConnectionChangedType.Opened:
                     break;
                 case ConnectionChangedType.Closed:
-                    DisconnectPlayer(args.ConnectionId).Wait();
+                    await DisconnectPlayer(args.ConnectionId);
                     break;
                 case ConnectionChangedType.Login:
                     break;
                 case ConnectionChangedType.Logout:
-                    DisconnectPlayer(args.ConnectionId).Wait();
+                    await DisconnectPlayer(args.ConnectionId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -78,14 +78,14 @@ namespace Game.Services
             var player = await GetPlayer(connectionId);
 
             _playersByConnections[connectionId] = player.Id;
-            OnPlayerChanged(PlayerChangeType.Connected, connectionId, player.Id);
+            await OnPlayerChanged(PlayerChangeType.Connected, connectionId, player.Id);
         }
 
         public async Task<string> DisconnectPlayer(string connectionId)
         {
             string playerId;
             _playersByConnections.TryRemove(connectionId, out playerId);
-            OnPlayerChanged(PlayerChangeType.Disconnected, connectionId, playerId);
+            await OnPlayerChanged(PlayerChangeType.Disconnected, connectionId, playerId);
             return await Task.FromResult(playerId);
         }
 
@@ -105,12 +105,13 @@ namespace Game.Services
             _getChannel = getChannel;
         }
 
-        private void OnPlayerChanged(PlayerChangeType type, string connectionId, string playerId)
+        private async Task OnPlayerChanged(PlayerChangeType type, string connectionId, string playerId)
         {
-            PlayerChanged?.Invoke(this, new PlayerChangedEventArgs(type, connectionId, playerId));
+            if (PlayerChanged != null)
+                await PlayerChanged(this, new PlayerChangedEventArgs(type, connectionId, playerId));
         }
 
-        public void HandleAction(string connectionId, PlayerAction action)
+        public async Task HandleAction(string connectionId, PlayerAction action)
         {
             string playerId;
             if (!_playersByConnections.TryGetValue(connectionId, out playerId))
@@ -119,7 +120,8 @@ namespace Game.Services
                 return;
             }
 
-            PlayerAction?.Invoke(this, new PlayerActionEventArgs(connectionId, playerId, action));
+            if (PlayerAction != null)
+                await PlayerAction(this, new PlayerActionEventArgs(connectionId, playerId, action));
         }
     }
 }
