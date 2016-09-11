@@ -21,6 +21,7 @@ module.exports = {
     },
 
     plugins: [
+        new webpack.NoErrorsPlugin(),
         new webpack.optimize.UglifyJsPlugin({ mangle: false, compress: { warnings: false } }),
         new ExtractTextPlugin('dist/[name].css'),
         new WebpackNotifierPlugin()
