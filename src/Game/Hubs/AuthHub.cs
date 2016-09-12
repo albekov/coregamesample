@@ -24,8 +24,6 @@ namespace Game.Hubs
         {
             _log.LogDebug("OnConnected");
 
-            await Clients.Caller.Message("Connected");
-
             await _connectionHandler.OpenConnection(Context.ConnectionId);
         }
 
@@ -43,16 +41,19 @@ namespace Game.Hubs
             await Task.FromResult((object) null);
         }
 
+        [UsedImplicitly]
         public async Task<string> Init(string authId)
         {
             return await _connectionHandler.AttachToSession(Context.ConnectionId, authId);
         }
 
+        [UsedImplicitly]
         public async Task<string> Login(string username, string password)
         {
             return await _connectionHandler.Login(Context.ConnectionId, username, password);
         }
 
+        [UsedImplicitly]
         public async void Logout()
         {
             await _connectionHandler.Logout(Context.ConnectionId);

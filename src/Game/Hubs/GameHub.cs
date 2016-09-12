@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 namespace Game.Hubs
 {
     [UsedImplicitly]
-    public class GameHub : Hub
+    public class GameHub : Hub<IGameConnection>
     {
         private readonly ILogger<GameHub> _log;
         private readonly PlayersHandler _playersHandler;
@@ -23,21 +23,24 @@ namespace Game.Hubs
             _playersHandler.SetChannel(GetChannel);
         }
 
-        private dynamic GetChannel(string connectionId)
+        private IGameConnection GetChannel(string connectionId)
         {
             return Clients.Client(connectionId);
         }
 
+        [UsedImplicitly]
         public async Task Start()
         {
             await _playersHandler.ConnectPlayer(Context.ConnectionId);
         }
 
+        [UsedImplicitly]
         public async Task Stop()
         {
             await _playersHandler.DisconnectPlayer(Context.ConnectionId);
         }
 
+        [UsedImplicitly]
         public async Task MoveTo(float x, float y)
         {
             await _playersHandler.HandleAction(Context.ConnectionId, new PlayerActionMoveTo(x, y));

@@ -20,7 +20,7 @@ namespace Game.Services
         private readonly ConcurrentDictionary<string, string> _playersByConnections =
             new ConcurrentDictionary<string, string>();
 
-        private Func<string, dynamic> _getChannel;
+        private Func<string, IGameConnection> _getChannel;
 
         public PlayersHandler(
             ILogger<PlayersHandler> logger,
@@ -95,12 +95,12 @@ namespace Game.Services
             return connectionIds;
         }
 
-        public dynamic GetChannel(string connectionId)
+        public IGameConnection GetChannel(string connectionId)
         {
             return _getChannel(connectionId);
         }
 
-        public void SetChannel(Func<string, dynamic> getChannel)
+        public void SetChannel(Func<string, IGameConnection> getChannel)
         {
             _getChannel = getChannel;
         }

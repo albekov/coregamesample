@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Game.Model;
@@ -57,11 +55,11 @@ namespace Game.Services
                 case PlayerChangeType.Connected:
                     var entity = await _world.ConnectPlayer(player);
                     var worldInfo = _world.Info;
-                    _playersHandler.GetChannel(args.ConnectionId).start(new {world = worldInfo, player = entity});
+                    _playersHandler.GetChannel(args.ConnectionId).Start(new {world = worldInfo, player = entity});
                     break;
                 case PlayerChangeType.Disconnected:
                     await _world.DisconnectPlayer(player);
-                    _playersHandler.GetChannel(args.ConnectionId).stop();
+                    _playersHandler.GetChannel(args.ConnectionId).Stop();
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -161,16 +159,6 @@ namespace Game.Services
 
         private void Finish(CancellationToken stop)
         {
-        }
-
-        public async Task Start(string connectionId)
-        {
-            await _playersHandler.ConnectPlayer(connectionId);
-        }
-
-        public async Task Stop(string connectionId)
-        {
-            await _playersHandler.DisconnectPlayer(connectionId);
         }
     }
 }
