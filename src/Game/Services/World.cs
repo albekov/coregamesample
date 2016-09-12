@@ -163,22 +163,12 @@ namespace Game.Services
             return await Task.FromResult(playerEntity);
         }
 
-        private GameEntity CreatePlayerEntity(Player player)
-        {
-            return new GameEntity
-            {
-                Id = player.Id,
-                Name = player.Name,
-                Type = "player",
-                X = player.X,
-                Y = player.Y
-            };
-        }
-
         public async Task<bool> DisconnectPlayer(Player player)
         {
             if (player == null) return false;
             _toRemove.Add(player.Id);
+
+            UpdatePlayer(player);
 
             HashSet<string> visible;
             _visible.TryRemove(player.Id, out visible);
@@ -219,6 +209,25 @@ namespace Game.Services
             };
 
             return update;
+        }
+
+        private GameEntity CreatePlayerEntity(Player player)
+        {
+            return new GameEntity
+            {
+                Id = player.Id,
+                Name = player.Name,
+                Type = "player",
+                X = player.X,
+                Y = player.Y
+            };
+        }
+
+        private void UpdatePlayer(Player player)
+        {
+            var entity = _entities[player.Id];
+            player.X = entity.X;
+            player.Y = entity.Y;
         }
 
         private IEnumerable<GameEntity> FindVisible(GameEntity player)
